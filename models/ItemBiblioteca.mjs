@@ -1,7 +1,8 @@
 import mongoose from 'mongoose'
+import mongooseSequence from 'mongoose-sequence';
 
 
-const AutoIncrement = require('mongoose-sequence')(mongoose);
+const AutoIncrement = mongooseSequence(mongoose);
 
 const {Schema} = mongoose
 const itemBibliotecaSchema = new Schema({
@@ -13,11 +14,11 @@ const itemBibliotecaSchema = new Schema({
         type: Date,
         required: true
     },
-    categorias: [{
+    categoria: {
         type: String,
         enum: ['LIBRO', 'REVISTA', 'AUDIOLIBRO', 'EBOOK'],
         required: true
-    }],
+    },
     prestamo: {
         type: Schema.Types.ObjectId,
         ref: 'Prestamo'
@@ -25,11 +26,11 @@ const itemBibliotecaSchema = new Schema({
 
 }, {timestamps: true})
 
-itemBibliotecaSchema.plugin(AutoIncrement, {inc_field: 'itemId'})
+itemBibliotecaSchema.plugin(AutoIncrement, {inc_field: 'id'})
 
-const item = mongoose.model('ItemBiblioteca', itemBibliotecaSchema) 
+const Item = mongoose.model('ItemBiblioteca', itemBibliotecaSchema) 
 
-const libroItem = item.discriminator('Libro', new Schema({
+const LibroItem = Item.discriminator('Libro', new Schema({
     isbn: {
         type: String,
         required: true
@@ -41,7 +42,7 @@ const libroItem = item.discriminator('Libro', new Schema({
     
 }))
 
-const revistaItem = item.discriminator('Revista', new Schema({
+const RevistaItem = Item.discriminator('Revista', new Schema({
     issn: {
         type: String,
         required: true
@@ -56,33 +57,35 @@ const revistaItem = item.discriminator('Revista', new Schema({
     }
 }))
 
-const audiolibroItem = item.discriminator('Audiolibro', new Schema({
+const AudiolibroItem = Item.discriminator('Audiolibro', new Schema({
     narrador: {
         type: String,
         required: true
     },
     duracion: {
-        type: Number, // Duración en minutos
+        type: Number, 
         required: true
     }
 }))
 
-const ebookItem = item.discriminator('Ebook', new Schema({
+const EbookItem = Item.discriminator('Ebook', new Schema({
     formato: {
         type: String,
         enum: ['PDF', 'EPUB', 'MOBI'],
         required: true
     },
     tamanoArchivo: {
-        type: Number, // Tamaño en MB
+        type: Number,
         required: true
     }
 }))
 
 export{
-    item,
-    libroItem,
-    revistaItem,
-    audiolibroItem,
-    ebookItem
+    Item,
+    LibroItem,
+    RevistaItem,
+    AudiolibroItem,
+    EbookItem
 }
+
+export default Item;

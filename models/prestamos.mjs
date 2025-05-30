@@ -1,7 +1,8 @@
 import mongoose from 'mongoose'
+import mongooseSequence from 'mongoose-sequence';
 
 
-const AutoIncrement = require('mongoose-sequence')(mongoose);
+const AutoIncrement = mongooseSequence(mongoose);
 
 const {Schema} = mongoose
 
@@ -37,3 +38,7 @@ const prestamosSchema = new Schema({
         default: 'ACTIVO'
     }
 }, {timestamps: true})
+
+prestamosSchema.plugin(AutoIncrement, {inc_field: 'id'})
+
+export default mongoose.model('Prestamo', prestamosSchema);

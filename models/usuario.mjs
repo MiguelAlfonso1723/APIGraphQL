@@ -1,8 +1,8 @@
 import mongoose from 'mongoose'
+import mongooseSequence from 'mongoose-sequence';
 
 
-const AutoIncrement = require('mongoose-sequence')(mongoose);
-
+const AutoIncrement = mongooseSequence(mongoose);
 
 const {Schema} = mongoose
 
@@ -27,6 +27,8 @@ const usuarioSchema = new Schema({
         ref: 'Prestamo'
     }]
 })
+
+usuarioSchema.plugin(AutoIncrement, {inc_field: 'id'})
 
 
 export default mongoose.model('Usuario', usuarioSchema)

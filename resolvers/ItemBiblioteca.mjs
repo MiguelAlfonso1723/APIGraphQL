@@ -4,9 +4,9 @@ import {
   RevistaItem,
   AudiolibroItem,
   EbookItem,
-} from "../models/ItemBiblioteca.mjs";
+} from "../models/itemBiblioteca.mjs";
 
-import Prestamo from "../models/Prestamo.mjs";
+
 
 async function items() {
   try {
@@ -78,7 +78,7 @@ function agregarItem(parent, args) {
             const nuevoLibro = new LibroItem({
               titulo: args.titulo,
               fechaPublicacion: args.fechaPublicacion,
-              categorias: args.categorias,
+              categorias: args.categoria,
               isbn: args.isbn,
               autores: args.autores
             });
@@ -88,7 +88,7 @@ function agregarItem(parent, args) {
           const nuevaRevista = new RevistaItem({
             titulo: args.titulo,
             fechaPublicacion: args.fechaPublicacion,
-            categorias: args.categorias,
+            categorias: args.categoria,
             issn: args.issn,
             editorial: args.editorial,
             numero: args.numero,
@@ -98,7 +98,7 @@ function agregarItem(parent, args) {
           const nuevoAudiolibro = new AudiolibroItem({
             titulo: args.titulo,
             fechaPublicacion: args.fechaPublicacion,
-            categorias: args.categorias,
+            categorias: args.categoria,
             narrador: args.narrador,
             duracion: args.duracion,
           });
@@ -107,7 +107,7 @@ function agregarItem(parent, args) {
           const nuevoEbook = new EbookItem({
             titulo: args.titulo,
             fechaPublicacion: args.fechaPublicacion,
-            categorias: args.categorias,
+            categorias: args.categoria,
             autor: args.autor,
             formato: args.formato,
           });
@@ -146,13 +146,69 @@ async function eliminarItem(parent, args) {
     
 }
 
-async function actualziarItem(parent, args){
+async function actualizarItem(parent, args){
     try{
         const item = await Item.findById(args.id);
-        if(item){
-            
-        }
-    }catch(err){
+        if (!item) throw new Error("Item no encontrado");
 
+        let itemN = new Item({
+            titulo: item.titulo,
+            fechaPublicacion: item.fechaPublicacion,
+            categorias: item.categorias,
+        })
+        switch (item.categoria) {
+            case "LIBRO":
+                itemN = new LibroItem({
+                    itemN,
+                    isbn: item.isbn,
+                    autores: item.autores
+                });
+                break;
+            case "REVISTA":
+                itemN = new RevistaItem({
+                    itemN,
+                    issn: item.issn,
+                    editorial: item.editorial,
+                    numero: item.numero
+                });
+                break;
+            case "AUDIOLIBRO":
+                itemN = new AudiolibroItem({
+                    itemN,
+                    narrador: item.narrador,
+                    duracion: item.duracion
+                });
+                break;
+            case "EBOOK":
+                itemN = new EbookItem({
+                    itemN,
+                    formato: item.formato
+                });
+                break;
+            default:
+                throw new Error("Categoría no válida");
+        }
+
+        itemN.prestamo = item.prestamo;
+
+        await item.owerwrite(itemN);
+        itemN._id = item._id; 
+        itemN.createdAt = item.createdAt; 
+        
+        return await item.save();
+
+    }catch(err){
+        console.error("Error al actualizar el item:", err);
+        throw new Error("No se pudo actualizar el item");
     }
 }
+
+export {
+  items,
+  itemById,
+  itemsByCategory,
+  itemByTitulo,
+  agregarItem,
+  eliminarItem,
+  actualizarItem
+};

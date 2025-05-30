@@ -1,36 +1,42 @@
 import {ApolloServer} from "@apollo/server";
 import { startStandaloneServer } from "@apollo/server/standalone";
 
-import {
-    ItemBiblioteca,
+import{
     items,
     itemById,
     itemsByCategory,
+    itemByTitulo,
+    agregarItem,
+    eliminarItem,
+} from "./resolvers/ItemBiblioteca.mjs";
+
+import {
     prestamos,
+    prestamosById,
     prestamosByEstado,
     prestamosByItem,
     prestamosByUsuario,
+    modificarPrestamo,
+    modificarEstadoPrestamo,
+    crearPrestamo,
+    devolverPrestamo,
+    marcarPrestamoComoPerdido,
+    eliminarPrestamo
+} from "./resolvers/Prestamo.mjs";
+
+import{
     usuarios,
     usuariosById,
     usuariosByTipo,
-    usuariosByEstado,
     agregarUsuario,
-    agregarItem,
     modificarUsuario,
-    modificarItem,
-    modificarPrestamo,
-    modificarEstadoPrestamo,
-    modificarCantidadDisponible,
-    agregarLibro,
-    agregarRevista,
-    crearPrestamo,
-    devolverPrestamo,
-    eliminarPrestamo,
     eliminarUsuario,
-    eliminarItem,
-    marcarPrestamoComoPerdido
-} from "./resolvers/index.mjs";
+    usuariobyName,
+    usuarioByIdBd
+} from "./resolvers/Usuario.mjs";
 
+import 'dotenv/config'
+import './util/connect-db.mjs'
 
 const typeDefs = `#graphql
 
@@ -59,7 +65,7 @@ interface ItemBiblioteca {
     id: ID!
     titulo: String!
     fechaPublicacion: String!
-    categorias: CategoriaItem!
+    categoria: CategoriaItem!
     prestamo: Prestamo
 }
 
@@ -68,38 +74,42 @@ type Libro implements ItemBiblioteca {
     id: ID!
     titulo: String!
     fechaPublicacion: String!
-    categorias: CategoriaItem!
+    categoria: CategoriaItem!
     isbn: String!
-    autores: [Autor!]!
+    autores: [String!]!
     cantidadDisponible: Int!
+    prestamo: Prestamo
 }
 
 type Revista implements ItemBiblioteca {
     id: ID!
     titulo: String!
     fechaPublicacion: String!
-    categorias: CategoriaItem!
+    categoria: CategoriaItem!
     issn: String!
     editorial: String!
     numero: Int!
+    prestamo: Prestamo
 }
 
 type Audiolibro implements ItemBiblioteca {
     id: ID!
     titulo: String!
     fechaPublicacion: String!
-    categorias: CategoriaItem!
+    categoria: CategoriaItem!
     narrador: String!
-    duracion: Int!  # Duración en minutos
+    duracion: Int!  
+    prestamo: Prestamo
 }
 
 type Ebook implements ItemBiblioteca {
     id: ID!
     titulo: String!
     fechaPublicacion: String!
-    categorias: CategoriaItem!
-    formato: String!  # Ejemplo: PDF, EPUB
-    tamanoArchivo: Int!  # Tamaño en KB
+    categoria: CategoriaItem!
+    formato: String!  
+    tamanoArchivo: Int!  
+    prestamo: Prestamo
 }
 
 type Usuario {
@@ -107,7 +117,7 @@ type Usuario {
     nombre: String!
     email: String!
     tipo: TipoUsuario!
-    prestamos: [Prestamo!]!
+    prestamos: [Prestamo]
 }
 
 type Prestamo {
@@ -122,10 +132,12 @@ type Prestamo {
 
 # Queries
 type Query {
-    items: [ItemBiblioteca!]!  # Retorna libros y revistas
+    items: [ItemBiblioteca!]!  
     itemById(id: ID!): ItemBiblioteca
     itemsByCategoria(categoria: CategoriaItem!): [ItemBiblioteca!]!
+    itemByTitulo(titulo: String!): ItemBiblioteca
     prestamos: [Prestamo!]!
+    prestamosById(id: ID!): Prestamo
     prestamosByEstado(estado: EstadoPrestamo!): [Prestamo!]!
     prestamosByItem(id: ID!): [Prestamo!]!
     prestamosByUsuario(id: ID!): [Prestamo!]!
@@ -133,9 +145,9 @@ type Query {
     usuarioById(id: ID!): Usuario
     usuariosByTipo(tipo: TipoUsuario!): [Usuario!]!
     usuariosByEstado(estado: EstadoPrestamo!): [Usuario!]!
+    usuariobyName(nombre: String!): Usuario
+    usuarioByIdBd(id: ID!): Usuario
     
-
-
 }
 
 # Mutations
@@ -146,33 +158,40 @@ type Mutation {
         email: String!
         tipo: TipoUsuario!
     ): Usuario!
-    agregarItem(
-        titulo: String!
-        fechaPublicacion: String!
-        categorias: [CategoriaItem!]!
-        isbn: String
-        issn: String
-        editorial: String
-        numero: Int
-    ): ItemBiblioteca!
+
 
     agregarLibro(
         titulo: String!
         fechaPublicacion: String!
-        categorias: [CategoriaItem!]!
+        categoria: CategoriaItem!
         isbn: String!
-        autores: [Autor!]!
-        cantidadDisponible: Int!
+        autores: [String!]!
     ): Libro!
 
     agregarRevista(
         titulo: String!
         fechaPublicacion: String!
-        categorias: [CategoriaItem!]!
+        categoria: CategoriaItem!
         issn: String!
         editorial: String!
         numero: Int!
     ): Revista!
+
+    agregarAudiolibro(
+        titulo: String!
+        fechaPublicacion: String!
+        categorias: CategoriaItem!
+        narrador: String!
+        duracion: Int!
+    ): Audiolibro!
+
+    agregarEbook(
+        titulo: String!
+        fechaPublicacion: String!
+        categorias: CategoriaItem!
+        formato: String!
+        tamanoArchivo: Int!
+    ): Ebook!
 
     modificarUsuario(
         usuarioId: ID!
@@ -180,16 +199,40 @@ type Mutation {
         email: String
         tipo: TipoUsuario
     ): Usuario!
-    modificarItem(
-        itemId: ID!
-        titulo: String
+
+    modificarLibro(
+        titulo: String!
         fechaPublicacion: String
-        categorias: [CategoriaItem!]
+        categoria: CategoriaItem!
         isbn: String
+        autores: [String!]
+    ): Libro!
+
+    modificarRevista(
+        titulo: String!
+        fechaPublicacion: String
+        categorias: CategoriaItem!
         issn: String
         editorial: String
         numero: Int
-    ): ItemBiblioteca!
+    ): Revista!
+
+    modificarAudiolibro(
+        titulo: String!
+        fechaPublicacion: String
+        categoria: CategoriaItem!
+        narrador: String
+        duracion: Int
+    ): Audiolibro!
+
+    modificarEbook(
+        titulo: String!
+        fechaPublicacion: String
+        categoria: CategoriaItem!
+        formato: String
+        tamanoArchivo: Int
+    ): Ebook!
+
     modificarPrestamo(
         prestamoId: ID!
         itemId: ID
@@ -197,10 +240,12 @@ type Mutation {
         fechaDevolucion: String
         estado: EstadoPrestamo
     ): Prestamo!
+
     modificarEstadoPrestamo(
         prestamoId: ID!
         estado: EstadoPrestamo!
     ): Prestamo!
+
     modificarCantidadDisponible(
         itemId: ID!
         cantidad: Int!
@@ -211,25 +256,29 @@ type Mutation {
         itemId: ID!
         usuarioId: ID!
     ): Prestamo!
+
     devolverPrestamo(
         prestamoId: ID!
     ): Prestamo!
+
     marcarPrestamoComoPerdido(
         prestamoId: ID!
     ): Prestamo!
+
     eliminarPrestamo(
         prestamoId: ID!
     ): Prestamo!
+
     eliminarUsuario(
         usuarioId: ID!
     ): Usuario!
+
     eliminarItem(
         itemId: ID!
     ): ItemBiblioteca!
     
 
-}
-    
+} 
 `
 
 const resolvers = {
@@ -237,27 +286,28 @@ const resolvers = {
         items: items,
         itemById: itemById,
         itemsByCategoria: itemsByCategory,
-        itemByNombre: itemByNombre,
+        itemByTitulo: itemByTitulo,
         prestamos: prestamos,
+        prestamosById: prestamosById,
         prestamosByEstado: prestamosByEstado,
         prestamosByItem: prestamosByItem,
         prestamosByUsuario: prestamosByUsuario,
         usuarios: usuarios,
         usuarioById: usuariosById,
         usuariosByTipo: usuariosByTipo,
-        usuariosByEstado: usuariosByEstado,
+        usuariobyName: usuariobyName,
+        usuarioByIdBd: usuarioByIdBd
     },
     Mutation: {
         agregarUsuario: agregarUsuario,
-        agregarItem: agregarItem,
+        agregarLibro: agregarItem,
+        agregarRevista: agregarItem,
+        agregarAudiolibro: agregarItem,
+        agregarEbook: agregarItem,
         eliminarItem: eliminarItem,
         modificarUsuario: modificarUsuario,
-        modificarItem: modificarItem,
         modificarPrestamo: modificarPrestamo,
         modificarEstadoPrestamo: modificarEstadoPrestamo,
-        modificarCantidadDisponible: modificarCantidadDisponible,
-        agregarLibro: agregarLibro,
-        agregarRevista: agregarRevista,
         crearPrestamo: crearPrestamo,
         devolverPrestamo: devolverPrestamo,
         eliminarPrestamo: eliminarPrestamo,
