@@ -180,7 +180,7 @@ type Mutation {
     agregarAudiolibro(
         titulo: String!
         fechaPublicacion: String!
-        categorias: CategoriaItem!
+        categoria: CategoriaItem!
         narrador: String!
         duracion: Int!
     ): Audiolibro!
@@ -188,7 +188,7 @@ type Mutation {
     agregarEbook(
         titulo: String!
         fechaPublicacion: String!
-        categorias: CategoriaItem!
+        categoria: CategoriaItem!
         formato: String!
         tamanoArchivo: Int!
     ): Ebook!

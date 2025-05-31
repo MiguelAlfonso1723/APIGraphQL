@@ -54,7 +54,6 @@ async function agregarUsuario(parent, args) {
         tipo,
       prestamos: [],
     });
-    console.log("Nuevo usuario:", nuevoUsuario);
     await nuevoUsuario.save();
     return nuevoUsuario;
   } catch (error) {

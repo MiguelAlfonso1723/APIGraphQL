@@ -16,7 +16,7 @@ async function prestamos() {
 
 async function prestamosById(parent, args) {
     try{
-        return await Prestamo.findById(args.id);
+        return await Prestamo.findOne({id: args.prestamoId});
     }catch(error) {
         console.error("Error fetching prestamo by ID:", error);
         throw new Error("Error fetching prestamo by ID");
@@ -89,19 +89,23 @@ async function modificarEstadoPrestamo(parent, args) {
 
 async function crearPrestamo(parent, args) {
     try{
-        const item = await Item.findById(args.itemId);
+        const item = await Item.findOne({itemId: args.itemId});
+        console.log("Item encontrado:", item);
         if (!item) throw new Error("Item no encontrado");
-        const usuario = await Usuario.findById(args.usuarioId);
+        const usuario = await Usuario.findOne({usuarioId: args.usuarioId});
+        console.log("Usuario encontrado:", usuario);
         if (!usuario) throw new Error("Usuario no encontrado");
 
-        const prestamo = new Prestamo({
+        const prestamo = await new Prestamo({
             fechaPrestamo: new Date(),
-            usuario: usuario._id,
-            item: item._id,
             estado: 'ACTIVO',
         });
-        item.prestamo = prestamo._id;
-        usuario.prestamos.push(prestamo._id);
+        item.prestamo = prestamo;
+        await item.save();
+        usuario.prestamos.push(prestamo);
+        await usuario.save();
+        prestamo.itemBiblioteca = item;
+        prestamo.usuario = usuario;
         return await prestamo.save();
 
     }catch(error) {

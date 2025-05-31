@@ -25,12 +25,10 @@ const prestamosSchema = new Schema({
     usuario: {
         type: Schema.Types.ObjectId,
         ref: 'Usuario',
-        required: true
     },
     itemBiblioteca: {
         type: Schema.Types.ObjectId,
         ref: 'ItemBiblioteca',
-        required: true
     },
     estado: {
         type: String,
@@ -39,6 +37,6 @@ const prestamosSchema = new Schema({
     }
 }, {timestamps: true})
 
-prestamosSchema.plugin(AutoIncrement, {inc_field: 'id'})
+prestamosSchema.plugin(AutoIncrement, {inc_field: 'prestamoId'})
 
 export default mongoose.model('Prestamo', prestamosSchema);

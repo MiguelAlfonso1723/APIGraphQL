@@ -26,7 +26,7 @@ const itemBibliotecaSchema = new Schema({
 
 }, {timestamps: true})
 
-itemBibliotecaSchema.plugin(AutoIncrement, {inc_field: 'id'})
+itemBibliotecaSchema.plugin(AutoIncrement, {inc_field: 'itemId'})
 
 const Item = mongoose.model('ItemBiblioteca', itemBibliotecaSchema) 
 

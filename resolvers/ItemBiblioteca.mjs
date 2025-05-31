@@ -20,7 +20,7 @@ async function items() {
 
 async function itemById(parent, args) {
   try {
-    return await Item.findById(args.id);
+    return await Item.findOne({id: args.itemId});
   } catch (error) {
     console.error("Error al obtener el item por ID:", error);
     throw new Error("No se pudo encontrar el item con el ID proporcionado");
@@ -57,7 +57,7 @@ async function itemByTitulo(parent, args) {
   try {
     const resultado = await Item.findOne({ titulo: args.titulo });
     if (!resultado) {
-      throw new Error("No se encontró ningún item con el nombre proporcionado");
+      return null;
     }
     return resultado;
   } catch (error) {
@@ -66,58 +66,49 @@ async function itemByTitulo(parent, args) {
   }
 }
 
-function agregarItem(parent, args) {
+async function agregarItem(parent, args) {
   try {
-    if (
-      itemByTitulo(args.titulo) != null ||
-      itemByTitulo(args.titulo).categoria != args.categoria
-    ) {
-      switch (args.categoria) {
+    switch (args.categoria) {
         case "LIBRO":
-          if (itemByNombre(null, { titulo: args.titulo }) === null) {
-            const nuevoLibro = new LibroItem({
+          const nuevoLibro = await new LibroItem({
               titulo: args.titulo,
               fechaPublicacion: args.fechaPublicacion,
-              categorias: args.categoria,
+              categoria: args.categoria,
               isbn: args.isbn,
               autores: args.autores
             });
-            return nuevoLibro.save();
-          }
+            return await nuevoLibro.save();
         case "REVISTA":
-          const nuevaRevista = new RevistaItem({
+          const nuevaRevista = await new RevistaItem({
             titulo: args.titulo,
             fechaPublicacion: args.fechaPublicacion,
-            categorias: args.categoria,
+            categoria: args.categoria,
             issn: args.issn,
             editorial: args.editorial,
             numero: args.numero,
           });
-          return nuevaRevista.save();
+          return await nuevaRevista.save();
         case "AUDIOLIBRO":
-          const nuevoAudiolibro = new AudiolibroItem({
+          const nuevoAudiolibro = await new AudiolibroItem({
             titulo: args.titulo,
             fechaPublicacion: args.fechaPublicacion,
-            categorias: args.categoria,
+            categoria: args.categoria,
             narrador: args.narrador,
             duracion: args.duracion,
           });
-          return nuevoAudiolibro.save();
+          return await nuevoAudiolibro.save();
         case "EBOOK":
-          const nuevoEbook = new EbookItem({
+          const nuevoEbook = await new EbookItem({
             titulo: args.titulo,
             fechaPublicacion: args.fechaPublicacion,
-            categorias: args.categoria,
-            autor: args.autor,
+            categoria: args.categoria,
             formato: args.formato,
+            tamanoArchivo: args.tamanoArchivo
           });
-          return nuevoEbook.save();
+          return await nuevoEbook.save();
         default:
           throw new Error("Categoría no válida");
         }
-    }else{
-        return null;
-    }
   } catch (error) {
     console.error("Error al agregar el item:", error);
     throw new Error("No se pudo agregar el item");
@@ -148,7 +139,7 @@ async function eliminarItem(parent, args) {
 
 async function actualizarItem(parent, args){
     try{
-        const item = await Item.findById(args.id);
+        const item = await Item.findOne({id: args.itemId});
         if (!item) throw new Error("Item no encontrado");
 
         let itemN = new Item({
